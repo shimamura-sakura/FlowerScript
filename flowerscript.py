@@ -88,10 +88,16 @@ class IGScript(Script):
         self.s_write_le(1, opcode)
         self.s_write_le(1, data_size + 2)
 
+    def ig_unknown(self, opcode, data):
+        self.ig_opcode(opcode, len(data))
+        self.s_append(bytes(data))
+
     # 0x00 - String
-    def string(self, string, u1=0x00):
+    def string(self, string, u1=0x00, tail=None):
         self.ig_opcode(0x00, 2)
-        s_data = string.encode(self.encoding) + b'\0'
+        s_data = string.encode(self.encoding)
+        if tail != None:
+            s_data.extend(tail)
         self.s_write_le(1, u1)
         self.s_write_le(1, len(s_data))
         self.s_append(s_data)
@@ -102,9 +108,11 @@ class IGScript(Script):
         self.s_write_le(2, u2)
 
     # 0x02 - Call script
-    def call_script(self, name, u1=0x00):
+    def call_script(self, name, u1=0x00, tail=None):
         self.ig_opcode(0x02, 2)
         n_data = name.encode(self.encoding)
+        if tail != None:
+            n_data.extend(tail)
         self.s_write_le(1, u1)
         self.s_write_le(1, len(n_data))
         self.s_append(n_data)
@@ -132,9 +140,11 @@ class IGScript(Script):
         self.s_write_le(2, u2)
 
     # 0x1d - Append Choice
-    def choices_append(self, las, text):
+    def choices_append(self, las, text, tail=None):
         self.ig_opcode(0x1d, 6)
         t_data = text.encode(self.encoding)
+        if tail != None:
+            t_data.extend(tail)
         self.s_write_le(2, len(t_data))
         self.s_refer_lb(4, las)
         self.s_append(t_data)
