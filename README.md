@@ -8,6 +8,8 @@ It is documented in the source code.
 
 Some examples can be found in the examples directory.
 
+Try compare `start.s.py` and `start.dis.py`
+
 ## Tools
 
 `pretty.py` : A script to generate a text from a script file
