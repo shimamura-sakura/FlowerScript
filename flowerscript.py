@@ -4,11 +4,13 @@ import enum
 ENCODING = 'cp932'
 
 
-def le_fr(data):
+def le_fr(data, signed=False):
     value = shift = 0
     for b in data:
         value += b << shift
         shift += 8
+    if signed and b & 0x80:
+        value -= 1 << shift
     return value
 
 
@@ -35,10 +37,11 @@ def fmt_list(data):
 
 class Type(enum.Enum):
     HEXNUM = 0
-    DECNUM = 1
-    OFFSET = 2
-    STRLEN = 3
-    BARRAY = 4
+    SG_DEC = 1
+    UN_DEC = 2
+    OFFSET = 3
+    STRLEN = 4
+    BARRAY = 5
 
 
 class Op:
@@ -59,8 +62,10 @@ class Op:
             data = fp.read(size)
             if tp == Type.HEXNUM:
                 segs.append(fmt_number(le_fr(data)))
-            if tp == Type.DECNUM:
-                segs.append(fmt_number(le_fr(data), '%d'))
+            if tp == Type.SG_DEC:
+                segs.append(fmt_number(le_fr(data, True), '%d'))
+            if tp == Type.UN_DEC:
+                segs.append(fmt_number(le_fr(data, False), '%d'))
             if tp == Type.OFFSET:
                 offset = le_fr(data)
                 label_set.add(offset)
@@ -85,33 +90,51 @@ OPS = {
     0x00: Op('str')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
-    0x01: Op('0x01')
+    0x01: Op('end')
     .field(2, Type.HEXNUM),
-    0x02: Op('call_script')
+    0x02: Op('jmp_script')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
     0x04: Op('set_value')
     .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
+    .field(4, Type.SG_DEC),
     0x05: Op('add_value')
     .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
-    0x0d: Op('jump')
+    .field(4, Type.SG_DEC),
+    0x06: Op('jmp_eq')
+    .field(2, Type.BARRAY)
+    .field(2, Type.HEXNUM)
+    .field(2, Type.BARRAY)
+    .field(4, Type.HEXNUM)
+    .field(4, Type.OFFSET),
+    0x08: Op('jmp_be')
+    .field(2, Type.BARRAY)
+    .field(2, Type.HEXNUM)
+    .field(2, Type.BARRAY)
+    .field(4, Type.HEXNUM)
+    .field(4, Type.OFFSET),
+    0x09: Op('jmp_le')
+    .field(2, Type.BARRAY)
+    .field(2, Type.HEXNUM)
+    .field(2, Type.BARRAY)
+    .field(4, Type.HEXNUM)
+    .field(4, Type.OFFSET),
+    0x0d: Op('jmp')
     .field(2, Type.HEXNUM)
     .field(4, Type.OFFSET),
     0x0c: Op('dialog')
     .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
+    .field(4, Type.SG_DEC),
     0x0e: Op('wait')
     .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
+    .field(4, Type.SG_DEC),
     0x0f: Op('fgimage_0f')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
     0x10: Op('bgimage_10')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
-    0x11: Op('dialog_end')
+    0x11: Op('dlg_noimg')
     .field(6, Type.HEXNUM),
     0x12: Op('fgimage_12')
     .field(1, Type.HEXNUM)
@@ -119,30 +142,37 @@ OPS = {
     0x13: Op('image_opts')
     .field(1, Type.HEXNUM)
     .field(1, Type.HEXNUM)
-    .field(2, Type.DECNUM)
-    .field(2, Type.DECNUM),
+    .field(2, Type.SG_DEC)
+    .field(2, Type.SG_DEC),
     0x14: Op('fade_in')
     .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
-    0x16: Op('0x16')
-    .field(6, Type.BARRAY),
-    0x1b: Op('choices_end')
+    .field(4, Type.SG_DEC),
+    0x16: Op('bg_color')
+    .field(2, Type.HEXNUM)
+    .field(1, Type.UN_DEC)
+    .field(1, Type.UN_DEC)
+    .field(1, Type.UN_DEC)
+    .field(1, Type.HEXNUM),
+    0x1b: Op('sel_end')
     .field(2, Type.HEXNUM),
-    0x1c: Op('choices_beg')
+    0x1c: Op('sel_beg')
     .field(2, Type.HEXNUM),
-    0x1d: Op('choices_add')
+    0x1d: Op('sel_add')
     .field(2, Type.STRLEN)
     .field(4, Type.OFFSET),
+    0x1e: Op('0x1e')
+    .field(1, Type.HEXNUM)
+    .field(1, Type.UN_DEC),
     0x21: Op('0x21')
-    .field(2, Type.HEXNUM),
+    .field(2, Type.UN_DEC),
     0x22: Op('bgm')
     .field(5, Type.BARRAY)
     .field(1, Type.STRLEN),
-    0x23: Op('0x23')
+    0x23: Op('bgm_stop')
     .field(2, Type.HEXNUM),
-    0x24: Op('0x24')
+    0x24: Op('bgm_fadeout')
     .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
+    .field(4, Type.SG_DEC),
     0x27: Op('voice')
     .field(5, Type.BARRAY)
     .field(1, Type.STRLEN),
@@ -156,23 +186,58 @@ OPS = {
     0x2c: Op('0x2c')
     .field(2, Type.HEXNUM)
     .field(4, Type.HEXNUM),
+    0x2d: Op('0x2d')
+    .field(1, Type.HEXNUM)
+    .field(1, Type.HEXNUM)
+    .field(4, Type.SG_DEC)
+    .field(1, Type.STRLEN)
+    .field(3, Type.BARRAY),
     0x35: Op('yuri')
     .field(1, Type.HEXNUM)
     .field(1, Type.HEXNUM),
-    0x3b: Op('jmp_2shuume')
+    0x3b: Op('jump_2shuume')
     .field(2, Type.HEXNUM)
     .field(4, Type.OFFSET),
     0x3f: Op('add_record')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
-    0x40: Op('clear_layer')
+    0x40: Op('dlg_show')
     .field(2, Type.HEXNUM),
-    0x54: Op('0x54')
+    0x4c: Op('0x4c')
+    .field(2, Type.HEXNUM),
+    0x4d: Op('0x4d')
+    .field(2, Type.BARRAY)
+    .field(4, Type.SG_DEC),
+    0x50: Op('0x50')
+    .field(2, Type.BARRAY)
+    .field(4, Type.HEXNUM)
+    .field(4, Type.HEXNUM),
+    0x51: Op('0x51')
+    .field(3, Type.BARRAY),
+    0x54: Op('wait_click')
+    .field(2, Type.HEXNUM),
+    0x57: Op('0x57')
     .field(2, Type.HEXNUM),
     0x72: Op('0x72')
-    .field(18, Type.BARRAY),
+    .field(1, Type.HEXNUM)
+    .field(1, Type.HEXNUM)
+    .field(2, Type.SG_DEC)
+    .field(2, Type.SG_DEC)
+    .field(2, Type.SG_DEC)
+    .field(2, Type.SG_DEC)
+    .field(4, Type.BARRAY)
+    .field(2, Type.SG_DEC)
+    .field(2, Type.SG_DEC),
     0x73: Op('0x73')
-    .field(18, Type.BARRAY),
+    .field(1, Type.HEXNUM)
+    .field(1, Type.HEXNUM)
+    .field(2, Type.SG_DEC)
+    .field(2, Type.SG_DEC)
+    .field(2, Type.SG_DEC)
+    .field(2, Type.SG_DEC)
+    .field(4, Type.BARRAY)
+    .field(2, Type.SG_DEC)
+    .field(2, Type.SG_DEC),
     0x74: Op('0x74')
     .field(2, Type.HEXNUM),
     0x75: Op('0x75')
@@ -182,10 +247,16 @@ OPS = {
     .field(1, Type.STRLEN),
     0xb2: Op('0xb2')
     .field(6, Type.BARRAY),
+    0xb3: Op('0xb3')
+    .field(2, Type.BARRAY),
     0xb4: Op('dlg_image')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
+    0xb6: Op('0xb6')
+    .field(2, Type.HEXNUM),
     0xb8: Op('0xb8')
+    .field(2, Type.HEXNUM),
+    0xba: Op('0xba')
     .field(2, Type.HEXNUM),
     0xbb: Op('0xbb')
     .field(2, Type.HEXNUM)
@@ -195,7 +266,10 @@ OPS = {
     .field(4, Type.HEXNUM),
     0xbd: Op('0xbd')
     .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM)
+    .field(4, Type.HEXNUM),
+    0xbe: Op('0xbe')
+    .field(2, Type.HEXNUM)
+    .field(4, Type.HEXNUM),
 }
 
 OPS_BYNAME = dict(map(lambda kv: (kv[1].opname, (kv[0], kv[1])), OPS.items()))
@@ -212,6 +286,7 @@ def disasm(fp, encoding=ENCODING):
         else:
             raise NotImplementedError(
                 'unimplemented opcode %02x at offset %x' % (opcode, offset))
+        # print(lines[-1])
     i = 0
     while i < len(lines):
         offset, line = lines[i]
@@ -258,13 +333,13 @@ class Assembler:
         if opname in OPS_BYNAME:
             opcode, op = OPS_BYNAME[opname]
         else:
-            raise NotImplementedError('unknown op name')
+            raise NotImplementedError('unknown op name %s' % opname)
         self.bytes.append(opcode)
         self.bytes.append(op.opsize)
         slen_off = slen_siz = None
         args = list(args)
         for size, tp in op.fields:
-            if tp == Type.HEXNUM or tp == Type.DECNUM:
+            if tp == Type.HEXNUM or tp == Type.SG_DEC:
                 value = args.pop(0)
                 self.bytes.extend(le_to(value, size))
             if tp == Type.OFFSET:
@@ -277,6 +352,8 @@ class Assembler:
                 self.bytes.extend(le_to(-1, size))
             if tp == Type.BARRAY:
                 array = args.pop(0)
+                if len(array) != size:
+                    raise ValueError('data length not equal to definition')
                 self.bytes.extend(array)
         if slen_off != None:
             str_dat = args.pop(0).encode(self.encoding)
