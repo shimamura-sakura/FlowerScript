@@ -27,6 +27,7 @@ with open('script.py', 'w') as fp:
 s = flowerscript.Assembler(encoding='cp932')
 
 # Example result: start.s from FLOWERS Le volume sur ete
+# Many operations are documented in 'iglib/flowerscript.py'
 s.op('dlg_show', 0)
 s.op('set_value', 0x64, 0)
 s.op('set_value', 0x65, 0)
