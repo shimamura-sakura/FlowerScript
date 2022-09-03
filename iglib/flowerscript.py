@@ -89,64 +89,64 @@ class Op:
 OPS = {
     0x00: Op('str')
     .field(1, Type.HEXNUM)
-    .field(1, Type.STRLEN),
+    .field(1, Type.STRLEN),  # Text
     0x01: Op('end')
     .field(2, Type.HEXNUM),
     0x02: Op('jmp_script')
     .field(1, Type.HEXNUM)
-    .field(1, Type.STRLEN),
+    .field(1, Type.STRLEN),  # Filename
     0x04: Op('set_value')
-    .field(2, Type.HEXNUM)
-    .field(4, Type.SG_DEC),
+    .field(2, Type.HEXNUM)   # Address
+    .field(4, Type.SG_DEC),  # Value
     0x05: Op('add_value')
-    .field(2, Type.HEXNUM)
-    .field(4, Type.SG_DEC),
+    .field(2, Type.HEXNUM)   # Address
+    .field(4, Type.SG_DEC),  # Value
     0x06: Op('jmp_eq')
     .field(2, Type.BARRAY)
-    .field(2, Type.HEXNUM)
+    .field(2, Type.HEXNUM)   # Address
     .field(2, Type.BARRAY)
-    .field(4, Type.HEXNUM)
-    .field(4, Type.OFFSET),
+    .field(4, Type.HEXNUM)   # Value
+    .field(4, Type.OFFSET),  # Label
     0x08: Op('jmp_be')
     .field(2, Type.BARRAY)
-    .field(2, Type.HEXNUM)
+    .field(2, Type.HEXNUM)   # Address
     .field(2, Type.BARRAY)
-    .field(4, Type.HEXNUM)
-    .field(4, Type.OFFSET),
+    .field(4, Type.HEXNUM)   # Value
+    .field(4, Type.OFFSET),  # Label
     0x09: Op('jmp_le')
     .field(2, Type.BARRAY)
-    .field(2, Type.HEXNUM)
+    .field(2, Type.HEXNUM)   # Address
     .field(2, Type.BARRAY)
-    .field(4, Type.HEXNUM)
-    .field(4, Type.OFFSET),
+    .field(4, Type.HEXNUM)   # Value
+    .field(4, Type.OFFSET),  # Label
     0x0d: Op('jmp')
     .field(2, Type.HEXNUM)
-    .field(4, Type.OFFSET),
-    0x0c: Op('dialog')
+    .field(4, Type.OFFSET),  # Label
+    0x0c: Op('dlg_seq')
     .field(2, Type.HEXNUM)
-    .field(4, Type.SG_DEC),
+    .field(4, Type.SG_DEC),  # ? Sequence Number
     0x0e: Op('wait')
     .field(2, Type.HEXNUM)
-    .field(4, Type.SG_DEC),
-    0x0f: Op('fgimage_0f')
-    .field(1, Type.HEXNUM)
-    .field(1, Type.STRLEN),
-    0x10: Op('bgimage_10')
-    .field(1, Type.HEXNUM)
-    .field(1, Type.STRLEN),
+    .field(4, Type.SG_DEC),  # Duration (ms)
+    0x0f: Op('bmp_0f')
+    .field(1, Type.HEXNUM)   # ? Layer
+    .field(1, Type.STRLEN),  # Filename (w ext)
+    0x10: Op('bmp_10')
+    .field(1, Type.HEXNUM)   # ? Layer
+    .field(1, Type.STRLEN),  # Filename (w ext)
     0x11: Op('dlg_noimg')
     .field(6, Type.HEXNUM),
-    0x12: Op('fgimage_12')
-    .field(1, Type.HEXNUM)
-    .field(1, Type.STRLEN),
-    0x13: Op('image_opts')
-    .field(1, Type.HEXNUM)
-    .field(1, Type.HEXNUM)
-    .field(2, Type.SG_DEC)
-    .field(2, Type.SG_DEC),
+    0x12: Op('png_12')
+    .field(1, Type.HEXNUM)   # ? Layer
+    .field(1, Type.STRLEN),  # Filename (w ext)
+    0x13: Op('png_imgopts')
+    .field(1, Type.HEXNUM)   # ? Layer
+    .field(1, Type.UN_DEC)   # Scale %
+    .field(2, Type.SG_DEC)   # X of center
+    .field(2, Type.SG_DEC),  # Y of top
     0x14: Op('fade_in')
     .field(2, Type.HEXNUM)
-    .field(4, Type.SG_DEC),
+    .field(4, Type.SG_DEC),  # Duration (ms)
     0x16: Op('bg_color')
     .field(2, Type.HEXNUM)
     .field(1, Type.UN_DEC)
@@ -163,34 +163,38 @@ OPS = {
     0x1e: Op('0x1e')
     .field(1, Type.HEXNUM)
     .field(1, Type.UN_DEC),
-    0x21: Op('0x21')
-    .field(2, Type.UN_DEC),
+    0x21: Op('unlock_ending')
+    .field(2, Type.UN_DEC),  # Ending No. (1-10)
     0x22: Op('bgm')
-    .field(5, Type.BARRAY)
-    .field(1, Type.STRLEN),
+    .field(1, Type.HEXNUM)
+    .field(1, Type.UN_DEC)   # Repeat
+    .field(3, Type.BARRAY)
+    .field(1, Type.STRLEN),  # Filename (w/o ext; .ogg)
     0x23: Op('bgm_stop')
     .field(2, Type.HEXNUM),
     0x24: Op('bgm_fadeout')
     .field(2, Type.HEXNUM)
-    .field(4, Type.SG_DEC),
+    .field(4, Type.SG_DEC),  # Duration (ms)
     0x27: Op('voice')
     .field(5, Type.BARRAY)
     .field(1, Type.STRLEN),
     0x28: Op('se')
-    .field(5, Type.BARRAY)
-    .field(1, Type.STRLEN),
-    0x29: Op('0x29')
+    .field(1, Type.HEXNUM)
+    .field(1, Type.UN_DEC)   # Repeat
+    .field(3, Type.BARRAY)
+    .field(1, Type.STRLEN),  # Filename (w/o ext; .ogg)
+    0x29: Op('se_stop')
     .field(2, Type.HEXNUM),
     0x2a: Op('0x2a')
     .field(2, Type.HEXNUM),
     0x2c: Op('0x2c')
     .field(2, Type.HEXNUM)
     .field(4, Type.HEXNUM),
-    0x2d: Op('0x2d')
-    .field(1, Type.HEXNUM)
-    .field(1, Type.HEXNUM)
-    .field(4, Type.SG_DEC)
-    .field(1, Type.STRLEN)
+    0x2d: Op('se_2d')
+    .field(1, Type.HEXNUM)   # ?: 0, 1 have sound, others no sound
+    .field(1, Type.UN_DEC)   # Repeat
+    .field(4, Type.SG_DEC)   # Fade in (ms), must be positive
+    .field(1, Type.STRLEN)   # Filename (w/o ext; .ogg)
     .field(3, Type.BARRAY),
     0x35: Op('yuri')
     .field(1, Type.HEXNUM)
@@ -202,7 +206,7 @@ OPS = {
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
     0x40: Op('dlg_show')
-    .field(2, Type.HEXNUM),
+    .field(2, Type.UN_DEC),
     0x4c: Op('0x4c')
     .field(2, Type.HEXNUM),
     0x4d: Op('0x4d')
@@ -218,29 +222,31 @@ OPS = {
     .field(2, Type.HEXNUM),
     0x57: Op('0x57')
     .field(2, Type.HEXNUM),
-    0x72: Op('0x72')
+    0x72: Op('anim_a')
     .field(1, Type.HEXNUM)
-    .field(1, Type.HEXNUM)
-    .field(2, Type.SG_DEC)
-    .field(2, Type.SG_DEC)
-    .field(2, Type.SG_DEC)
-    .field(2, Type.SG_DEC)
-    .field(4, Type.BARRAY)
-    .field(2, Type.SG_DEC)
+    .field(1, Type.HEXNUM)   # ? Layer
+    .field(2, Type.SG_DEC)   # X of center (original size)
+    .field(2, Type.SG_DEC)   # Y of top    (original size)
+    .field(2, Type.SG_DEC)   # X scale %
+    .field(2, Type.SG_DEC)   # Y scale %
+    .field(2, Type.SG_DEC)   # Brightness (bigger, positive)
+    .field(2, Type.BARRAY)
+    .field(2, Type.SG_DEC)   # do { repeat; n -= 1; } while (n > 0);
     .field(2, Type.SG_DEC),
-    0x73: Op('0x73')
-    .field(1, Type.HEXNUM)
-    .field(1, Type.HEXNUM)
-    .field(2, Type.SG_DEC)
-    .field(2, Type.SG_DEC)
-    .field(2, Type.SG_DEC)
-    .field(2, Type.SG_DEC)
-    .field(4, Type.BARRAY)
-    .field(2, Type.SG_DEC)
+    0x73: Op('anim_b')
+    .field(1, Type.HEXNUM)   # ? Layer
+    .field(1, Type.UN_DEC)   # ? Method (0:?, 1;?, 2:BA, 3:AB, 4:ABA, 5:AB)
+    .field(2, Type.SG_DEC)   # X of center (original size)
+    .field(2, Type.SG_DEC)   # Y of top    (original size)
+    .field(2, Type.SG_DEC)   # X scale %
+    .field(2, Type.SG_DEC)   # Y scale %
+    .field(2, Type.SG_DEC)   # Brightness (smaller, positive)
+    .field(2, Type.BARRAY)
+    .field(2, Type.SG_DEC)   # Duration (ms)
     .field(2, Type.SG_DEC),
-    0x74: Op('0x74')
+    0x74: Op('anim_start')   # ? anim_run
     .field(2, Type.HEXNUM),
-    0x75: Op('0x75')
+    0x75: Op('anim_stop')    # ? anim_end
     .field(2, Type.HEXNUM),
     0x9c: Op('fgimage_9c')
     .field(1, Type.HEXNUM)
@@ -252,24 +258,29 @@ OPS = {
     0xb4: Op('dlg_image')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
-    0xb6: Op('0xb6')
-    .field(2, Type.HEXNUM),
+    0xb6: Op('dlg_wnd')
+    .field(2, Type.UN_DEC),  # 0: horizontal bottom, 1: vertical fullscreen
     0xb8: Op('0xb8')
-    .field(2, Type.HEXNUM),
+    .field(1, Type.HEXNUM)
+    .field(1, Type.UN_DEC),  # ? Chapter No.
     0xba: Op('0xba')
     .field(2, Type.HEXNUM),
     0xbb: Op('0xbb')
-    .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
+    .field(2, Type.BARRAY)
+    .field(2, Type.UN_DEC)
+    .field(2, Type.BARRAY),
     0xbc: Op('0xbc')
-    .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
+    .field(2, Type.BARRAY)
+    .field(2, Type.UN_DEC)
+    .field(2, Type.BARRAY),
     0xbd: Op('0xbd')
-    .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
+    .field(2, Type.BARRAY)
+    .field(2, Type.UN_DEC)
+    .field(2, Type.BARRAY),
     0xbe: Op('0xbe')
-    .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
+    .field(2, Type.BARRAY)
+    .field(2, Type.UN_DEC)
+    .field(2, Type.BARRAY),
 }
 
 OPS_BYNAME = dict(map(lambda kv: (kv[1].opname, (kv[0], kv[1])), OPS.items()))
