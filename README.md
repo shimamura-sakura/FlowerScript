@@ -2,6 +2,8 @@
 
 An assembler / disassembler tool for InnocentGrey 's script format
 
+All sources are in `iglib/`
+
 ## Examples
 
 Disassemble `script.s`, save result lines in `code.txt`

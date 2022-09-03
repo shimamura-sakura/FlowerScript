@@ -245,7 +245,7 @@ OPS = {
     0x9c: Op('fgimage_9c')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
-    0xb2: Op('0xb2')
+    0xb2: Op('play_op')
     .field(6, Type.BARRAY),
     0xb3: Op('0xb3')
     .field(2, Type.BARRAY),
@@ -275,6 +275,9 @@ OPS = {
 OPS_BYNAME = dict(map(lambda kv: (kv[1].opname, (kv[0], kv[1])), OPS.items()))
 
 
+statistics = {}
+
+
 def disasm(fp, encoding=ENCODING):
     lines = []
     label_set = set()
@@ -282,6 +285,7 @@ def disasm(fp, encoding=ENCODING):
         offset = fp.tell() - 2
         opcode, opsize = data
         if opcode in OPS:
+            statistics[opcode] = statistics.get(opcode, 0) + 1
             lines.append((offset, OPS[opcode].r(fp, encoding, label_set)))
         else:
             raise NotImplementedError(
@@ -339,22 +343,27 @@ class Assembler:
         slen_off = slen_siz = None
         args = list(args)
         for size, tp in op.fields:
-            if tp == Type.HEXNUM or tp == Type.SG_DEC:
+            if tp == Type.HEXNUM or tp == Type.SG_DEC or tp == Type.UN_DEC:
                 value = args.pop(0)
                 self.bytes.extend(le_to(value, size))
+                continue
             if tp == Type.OFFSET:
                 label = args.pop(0)
                 label.add_ref(len(self.bytes), size)
                 self.bytes.extend(le_to(-1, size))
+                continue
             if tp == Type.STRLEN:
                 slen_off = len(self.bytes)
                 slen_siz = size
                 self.bytes.extend(le_to(-1, size))
+                continue
             if tp == Type.BARRAY:
                 array = args.pop(0)
                 if len(array) != size:
                     raise ValueError('data length not equal to definition')
                 self.bytes.extend(array)
+                continue
+            raise Exception('should be unreachable !')
         if slen_off != None:
             str_dat = args.pop(0).encode(self.encoding)
             self.bytes.extend(str_dat)
