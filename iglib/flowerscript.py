@@ -175,6 +175,12 @@ OPS = {
     0x24: Op('bgm_fadeout')
     .field(2, Type.HEXNUM)
     .field(4, Type.SG_DEC),  # Duration (ms)
+    0x25: Op('bgm_25')
+    .field(1, Type.HEXNUM)   # ?: 0, 1 have sound, others no sound
+    .field(1, Type.UN_DEC)   # Repeat
+    .field(4, Type.SG_DEC)   # Fade in (ms), must be positive
+    .field(1, Type.STRLEN)   # Filename (w/o ext; .ogg)
+    .field(3, Type.BARRAY),
     0x27: Op('voice')
     .field(5, Type.BARRAY)
     .field(1, Type.STRLEN),
@@ -199,6 +205,11 @@ OPS = {
     0x35: Op('yuri')
     .field(1, Type.HEXNUM)
     .field(1, Type.HEXNUM),
+    0x36: Op('0x36')
+    .field(1, Type.HEXNUM)
+    .field(1, Type.HEXNUM),
+    0x3a: Op('0x3a')
+    .field(2, Type.HEXNUM),
     0x3b: Op('jump_2shuume')
     .field(2, Type.HEXNUM)
     .field(4, Type.OFFSET),
@@ -222,6 +233,18 @@ OPS = {
     .field(2, Type.HEXNUM),
     0x57: Op('0x57')
     .field(2, Type.HEXNUM),
+    0x5d: Op('0x5d')
+    .field(2, Type.HEXNUM),
+    0x5e: Op('0x5e')
+    .field(2, Type.HEXNUM),
+    0x5f: Op('0x5f')
+    .field(2, Type.HEXNUM)
+    .field(4, Type.OFFSET),
+    0x60: Op('WHAT_THE_FUCK_0x60')
+    .field(82, Type.BARRAY),
+    0x61: Op('0x61')
+    .field(1, Type.HEXNUM)
+    .field(1, Type.HEXNUM),
     0x72: Op('anim_a')
     .field(1, Type.HEXNUM)
     .field(1, Type.HEXNUM)   # ? Layer
@@ -248,6 +271,11 @@ OPS = {
     .field(2, Type.HEXNUM),
     0x75: Op('anim_stop')    # ? anim_end
     .field(2, Type.HEXNUM),
+    0x83: Op('0x83')
+    .field(2, Type.BARRAY)
+    .field(4, Type.SG_DEC),
+    0x8b: Op('0x8b')
+    .field(2, Type.HEXNUM),
     0x9c: Op('fgimage_9c')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
@@ -267,20 +295,24 @@ OPS = {
     .field(2, Type.HEXNUM),
     0xbb: Op('0xbb')
     .field(2, Type.BARRAY)
-    .field(2, Type.UN_DEC)
+    .field(2, Type.SG_DEC)
     .field(2, Type.BARRAY),
     0xbc: Op('0xbc')
     .field(2, Type.BARRAY)
-    .field(2, Type.UN_DEC)
+    .field(2, Type.SG_DEC)
     .field(2, Type.BARRAY),
     0xbd: Op('0xbd')
     .field(2, Type.BARRAY)
-    .field(2, Type.UN_DEC)
+    .field(2, Type.SG_DEC)
     .field(2, Type.BARRAY),
     0xbe: Op('0xbe')
     .field(2, Type.BARRAY)
-    .field(2, Type.UN_DEC)
+    .field(2, Type.SG_DEC)
     .field(2, Type.BARRAY),
+    0xbf: Op('0xbf')
+    .field(14, Type.BARRAY),
+    0xc0: Op('0xc0')
+    .field(14, Type.BARRAY)
 }
 
 OPS_BYNAME = dict(map(lambda kv: (kv[1].opname, (kv[0], kv[1])), OPS.items()))
@@ -311,7 +343,12 @@ def disasm(fp, encoding=ENCODING):
             i += 1
         i += 1
     if len(label_set) > 0:
-        raise Exception('jump into the middle of an op ?')
+        print('- Warning: not all jumps are pointing to an instruction -')
+        for offset in label_set:
+            text = fmt_offset(offset) + '.define_as(0x%x)' % offset
+            print('=>', text)
+            lines.append((offset, text))
+        print('- end of warning -')
     return [x[1] for x in lines]
 
 
@@ -325,6 +362,9 @@ class Label:
 
     def define(self):
         self.asmer.lbl_offs[self.name] = len(self.asmer.bytes)
+
+    def define_as(self, value):
+        self.asmer.lbl_offs[self.name] = value
 
 
 class Assembler:
