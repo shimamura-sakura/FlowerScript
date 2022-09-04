@@ -5,6 +5,7 @@ An assembler / disassembler tool for InnocentGrey 's script format
 Currently it can (dis)asm all scripts from
 
 - FLOWERS Le volume sur ete.
+- FLOWERS Le volume sur hiver.
 
 Use `iglib` as a package
 
