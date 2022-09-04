@@ -98,6 +98,11 @@ OPS = {
     0x04: Op('set_value')
     .field(2, Type.HEXNUM)   # Address
     .field(4, Type.SG_DEC),  # Value
+
+    # 0x64 - The 'yuri gauge', which shows a lily flower growing
+    # 0x65 - Used during reasoning selections
+    # 0x6c - Related to routes and endings
+
     0x05: Op('add_value')
     .field(2, Type.HEXNUM)   # Address
     .field(4, Type.SG_DEC),  # Value
@@ -119,12 +124,12 @@ OPS = {
     .field(2, Type.BARRAY)
     .field(4, Type.HEXNUM)   # Value
     .field(4, Type.OFFSET),  # Label
-    0x0d: Op('jmp')
-    .field(2, Type.HEXNUM)
-    .field(4, Type.OFFSET),  # Label
     0x0c: Op('dlg_seq')
     .field(2, Type.HEXNUM)
     .field(4, Type.SG_DEC),  # ? Sequence Number
+    0x0d: Op('jmp')
+    .field(2, Type.HEXNUM)
+    .field(4, Type.OFFSET),  # Label
     0x0e: Op('wait')
     .field(2, Type.HEXNUM)
     .field(4, Type.SG_DEC),  # Duration (ms)
@@ -204,7 +209,7 @@ OPS = {
     .field(3, Type.BARRAY),
     0x35: Op('yuri')
     .field(1, Type.HEXNUM)
-    .field(1, Type.HEXNUM),
+    .field(1, Type.HEXNUM),  # 1:Up, 2:Dn
     0x36: Op('0x36')
     .field(1, Type.HEXNUM)
     .field(1, Type.HEXNUM),
@@ -218,19 +223,21 @@ OPS = {
     .field(1, Type.STRLEN),
     0x40: Op('dlg_show')
     .field(2, Type.UN_DEC),
-    0x4c: Op('0x4c')
+    0x4c: Op('0x4c')         # ZhangHai: clear vertical messages
     .field(2, Type.HEXNUM),
-    0x4d: Op('0x4d')
+    0x4d: Op('0x4d')         # ZhangHai: fade window
     .field(2, Type.BARRAY)
     .field(4, Type.SG_DEC),
-    0x50: Op('0x50')
+    0x50: Op('0x50')         # ZhangHai: screen effect (shaking nado)
     .field(2, Type.BARRAY)
     .field(4, Type.HEXNUM)
     .field(4, Type.HEXNUM),
     0x51: Op('0x51')
     .field(3, Type.BARRAY),
     0x54: Op('wait_click')
-    .field(2, Type.HEXNUM),
+    .field(2, Type.HEXNUM),  # ZhangHai: 0:Invisible 1:MsgWait 2:MsgWait
+
+    # ZhangHai - https://github.com/zhanghai/igtools/blob/master/igscript/igscript.main.kts#L330
     0x57: Op('0x57')
     .field(2, Type.HEXNUM),
     0x5d: Op('0x5d')
@@ -252,7 +259,7 @@ OPS = {
     .field(2, Type.SG_DEC)   # Y of top    (original size)
     .field(2, Type.SG_DEC)   # X scale %
     .field(2, Type.SG_DEC)   # Y scale %
-    .field(2, Type.SG_DEC)   # Brightness (bigger, positive)
+    .field(2, Type.SG_DEC)   # Alpha (bigger, positive)
     .field(2, Type.BARRAY)
     .field(2, Type.SG_DEC)   # do { repeat; n -= 1; } while (n > 0);
     .field(2, Type.SG_DEC),
@@ -263,7 +270,7 @@ OPS = {
     .field(2, Type.SG_DEC)   # Y of top    (original size)
     .field(2, Type.SG_DEC)   # X scale %
     .field(2, Type.SG_DEC)   # Y scale %
-    .field(2, Type.SG_DEC)   # Brightness (smaller, positive)
+    .field(2, Type.SG_DEC)   # Alpha (smaller, positive)
     .field(2, Type.BARRAY)
     .field(2, Type.SG_DEC)   # Duration (ms)
     .field(2, Type.SG_DEC),
@@ -279,10 +286,13 @@ OPS = {
     0x9c: Op('fgimage_9c')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
-    0xb2: Op('play_op')
-    .field(6, Type.BARRAY),
-    0xb3: Op('0xb3')
+    0xb2: Op('play_video')   # ZhangHai - play video
+    .field(2, Type.BARRAY)
+    .field(2, Type.UN_DEC)   # 0: OP, 1: GrandFinaled
     .field(2, Type.BARRAY),
+    0xb3: Op('0xb3')         # ZhangHai - play credits
+    .field(1, Type.HEXNUM)
+    .field(1, Type.UN_DEC),  # 1: TrueEnd, 3: NormalEnd
     0xb4: Op('dlg_image')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
@@ -293,25 +303,29 @@ OPS = {
     .field(1, Type.UN_DEC),  # ? Chapter No.
     0xba: Op('0xba')
     .field(2, Type.HEXNUM),
-    0xbb: Op('0xbb')
-    .field(2, Type.BARRAY)
-    .field(2, Type.SG_DEC)
+    0xbb: Op('0xbb')         # ZhangHai - fade out music
+    .field(1, Type.HEXNUM)
+    .field(1, Type.UN_DEC)   # Volume %
+    .field(2, Type.UN_DEC)   # Fade out (ms)
     .field(2, Type.BARRAY),
-    0xbc: Op('0xbc')
-    .field(2, Type.BARRAY)
-    .field(2, Type.SG_DEC)
+    0xbc: Op('0xbc')         # ZhangHai - fade in music
+    .field(1, Type.HEXNUM)
+    .field(1, Type.UN_DEC)   # Volume %
+    .field(2, Type.UN_DEC)   # Fade in (ms)
     .field(2, Type.BARRAY),
-    0xbd: Op('0xbd')
-    .field(2, Type.BARRAY)
-    .field(2, Type.SG_DEC)
+    0xbd: Op('0xbd')         # ZhangHai - fade out all SE
+    .field(1, Type.HEXNUM)
+    .field(1, Type.UN_DEC)   # Volume %
+    .field(2, Type.UN_DEC)   # Fade out (ms)
     .field(2, Type.BARRAY),
-    0xbe: Op('0xbe')
-    .field(2, Type.BARRAY)
-    .field(2, Type.SG_DEC)
+    0xbe: Op('0xbe')         # ZhangHai - fade in all SE
+    .field(1, Type.HEXNUM)
+    .field(1, Type.UN_DEC)   # Volume %
+    .field(2, Type.UN_DEC)   # Fade in (ms)
     .field(2, Type.BARRAY),
-    0xbf: Op('0xbf')
+    0xbf: Op('0xbf')         # ZhangHai - play fg anim
     .field(14, Type.BARRAY),
-    0xc0: Op('0xc0')
+    0xc0: Op('0xc0')         # ZhangHai - stop fg anim
     .field(14, Type.BARRAY)
 }
 
