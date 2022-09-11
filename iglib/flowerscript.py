@@ -87,15 +87,15 @@ class Op:
 
 
 OPS = {
-    0x00: Op('str')
+    0x00: Op('dlg_str')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),  # Text
-    0x01: Op('end')
+    0x01: Op('exit')
     .field(2, Type.HEXNUM),
     0x02: Op('jmp_script')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),  # Filename
-    0x04: Op('set_value')
+    0x04: Op('val_set')
     .field(2, Type.HEXNUM)   # Address
     .field(4, Type.SG_DEC),  # Value
 
@@ -103,7 +103,7 @@ OPS = {
     # 0x65 - Used during reasoning selections
     # 0x6c - Related to routes and endings
 
-    0x05: Op('add_value')
+    0x05: Op('val_add')
     .field(2, Type.HEXNUM)   # Address
     .field(4, Type.SG_DEC),  # Value
     0x06: Op('jmp_eq')
@@ -124,7 +124,7 @@ OPS = {
     .field(2, Type.BARRAY)
     .field(4, Type.HEXNUM)   # Value
     .field(4, Type.OFFSET),  # Label
-    0x0c: Op('dlg_seq')
+    0x0c: Op('dlg_num')
     .field(2, Type.HEXNUM)
     .field(4, Type.SG_DEC),  # ? Sequence Number
     0x0d: Op('jmp')
@@ -133,23 +133,23 @@ OPS = {
     0x0e: Op('wait')
     .field(2, Type.HEXNUM)
     .field(4, Type.SG_DEC),  # Duration (ms)
-    0x0f: Op('bmp_0f')
+    0x0f: Op('bg_0f')
     .field(1, Type.HEXNUM)   # ? Layer
     .field(1, Type.STRLEN),  # Filename (w ext)
-    0x10: Op('bmp_10')
+    0x10: Op('bg_10')
     .field(1, Type.HEXNUM)   # ? Layer
     .field(1, Type.STRLEN),  # Filename (w ext)
-    0x11: Op('dlg_noimg')
-    .field(6, Type.HEXNUM),
-    0x12: Op('png_12')
+    0x11: Op('fg_clear')
+    .field(6, Type.HEXNUM),  # clear all fgs and avatar
+    0x12: Op('fg_12')
     .field(1, Type.HEXNUM)   # ? Layer
     .field(1, Type.STRLEN),  # Filename (w ext)
-    0x13: Op('png_imgopts')
+    0x13: Op('fg_metrics')
     .field(1, Type.HEXNUM)   # ? Layer
     .field(1, Type.UN_DEC)   # Scale %
     .field(2, Type.SG_DEC)   # X of center
     .field(2, Type.SG_DEC),  # Y of top
-    0x14: Op('fade_in')
+    0x14: Op('crossfade')
     .field(2, Type.HEXNUM)
     .field(4, Type.SG_DEC),  # Duration (ms)
     0x16: Op('bg_color')
@@ -168,9 +168,9 @@ OPS = {
     0x1e: Op('0x1e')
     .field(1, Type.HEXNUM)
     .field(1, Type.UN_DEC),
-    0x21: Op('unlock_ending')
+    0x21: Op('mark_end')
     .field(2, Type.UN_DEC),  # Ending No. (1-10)
-    0x22: Op('bgm')
+    0x22: Op('bgm_play')
     .field(1, Type.HEXNUM)
     .field(1, Type.UN_DEC)   # Repeat
     .field(3, Type.BARRAY)
@@ -180,28 +180,28 @@ OPS = {
     0x24: Op('bgm_fadeout')
     .field(2, Type.HEXNUM)
     .field(4, Type.SG_DEC),  # Duration (ms)
-    0x25: Op('bgm_25')
+    0x25: Op('bgm_fadein')
     .field(1, Type.HEXNUM)   # ?: 0, 1 have sound, others no sound
     .field(1, Type.UN_DEC)   # Repeat
     .field(4, Type.SG_DEC)   # Fade in (ms), must be positive
     .field(1, Type.STRLEN)   # Filename (w/o ext; .ogg)
     .field(3, Type.BARRAY),
-    0x27: Op('voice')
+    0x27: Op('v_play')
     .field(5, Type.BARRAY)
     .field(1, Type.STRLEN),
-    0x28: Op('se')
+    0x28: Op('se_play')
     .field(1, Type.HEXNUM)
     .field(1, Type.UN_DEC)   # Repeat
     .field(3, Type.BARRAY)
     .field(1, Type.STRLEN),  # Filename (w/o ext; .ogg)
     0x29: Op('se_stop')
     .field(2, Type.HEXNUM),
-    0x2a: Op('0x2a')
+    0x2a: Op('v_stop')   # ZhangHai - voice stop
     .field(2, Type.HEXNUM),
-    0x2c: Op('0x2c')
+    0x2c: Op('se_fadeout')   # Fade out SE
     .field(2, Type.HEXNUM)
-    .field(4, Type.HEXNUM),
-    0x2d: Op('se_2d')
+    .field(4, Type.UN_DEC),  # Duration (ms)
+    0x2d: Op('se_fadein')
     .field(1, Type.HEXNUM)   # ?: 0, 1 have sound, others no sound
     .field(1, Type.UN_DEC)   # Repeat
     .field(4, Type.SG_DEC)   # Fade in (ms), must be positive
@@ -210,29 +210,30 @@ OPS = {
     0x35: Op('yuri')
     .field(1, Type.HEXNUM)
     .field(1, Type.HEXNUM),  # 1:Up, 2:Dn
-    0x36: Op('0x36')
+    0x36: Op('0x36')         # Zhanghai - NOP
     .field(1, Type.HEXNUM)
     .field(1, Type.HEXNUM),
-    0x3a: Op('0x3a')
+    0x3a: Op('0x3a')         # ZhangHai - set good end completed
     .field(2, Type.HEXNUM),
-    0x3b: Op('jump_2shuume')
+    0x3b: Op('jmp_nishuume')
     .field(2, Type.HEXNUM)
     .field(4, Type.OFFSET),
-    0x3f: Op('add_record')
+    0x3f: Op('add_backlog')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
-    0x40: Op('dlg_show')
+    0x40: Op('dlg_mode')
     .field(2, Type.UN_DEC),
-    0x4c: Op('0x4c')         # ZhangHai: clear vertical messages
+    0x4c: Op('dlg_clear')         # ZhangHai: clear vertical messages
     .field(2, Type.HEXNUM),
-    0x4d: Op('0x4d')         # ZhangHai: fade window
-    .field(2, Type.BARRAY)
-    .field(4, Type.SG_DEC),
-    0x50: Op('0x50')         # ZhangHai: screen effect (shaking nado)
+    0x4d: Op('dlg_fade')         # ZhangHai: fade window
+    .field(1, Type.HEXNUM)
+    .field(1, Type.HEXNUM)   # visible
+    .field(4, Type.SG_DEC),  # duration ms
+    0x50: Op('scr_eff')         # ZhangHai: screen effect (shaking etc.)
     .field(2, Type.BARRAY)
     .field(4, Type.HEXNUM)
     .field(4, Type.HEXNUM),
-    0x51: Op('0x51')
+    0x51: Op('scr_eff_stop')    # ZhangHai
     .field(3, Type.BARRAY),
     0x54: Op('wait_click')
     .field(2, Type.HEXNUM),  # ZhangHai: 0:Invisible 1:MsgWait 2:MsgWait
@@ -252,7 +253,7 @@ OPS = {
     0x61: Op('0x61')
     .field(1, Type.HEXNUM)
     .field(1, Type.HEXNUM),
-    0x72: Op('anim_a')
+    0x72: Op('fg_anim_a')
     .field(1, Type.HEXNUM)
     .field(1, Type.HEXNUM)   # ? Layer
     .field(2, Type.SG_DEC)   # X of center (original size)
@@ -263,7 +264,7 @@ OPS = {
     .field(2, Type.BARRAY)
     .field(2, Type.SG_DEC)   # do { repeat; n -= 1; } while (n > 0);
     .field(2, Type.SG_DEC),
-    0x73: Op('anim_b')
+    0x73: Op('fg_anim_b')
     .field(1, Type.HEXNUM)   # ? Layer
     .field(1, Type.UN_DEC)   # ? Method (0:?, 1;?, 2:BA, 3:AB, 4:ABA, 5:AB)
     .field(2, Type.SG_DEC)   # X of center (original size)
@@ -274,16 +275,16 @@ OPS = {
     .field(2, Type.BARRAY)
     .field(2, Type.SG_DEC)   # Duration (ms)
     .field(2, Type.SG_DEC),
-    0x74: Op('anim_start')   # ? anim_run
+    0x74: Op('fg_anim_start')   # ? anim_run
     .field(2, Type.HEXNUM),
-    0x75: Op('anim_stop')    # ? anim_end
+    0x75: Op('fg_anim_stop')    # ? anim_end
     .field(2, Type.HEXNUM),
     0x83: Op('0x83')
     .field(2, Type.BARRAY)
     .field(4, Type.SG_DEC),
     0x8b: Op('0x8b')
     .field(2, Type.HEXNUM),
-    0x9c: Op('fgimage_9c')
+    0x9c: Op('fg_9c')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
     0xb2: Op('play_video')   # ZhangHai - play video
@@ -293,32 +294,32 @@ OPS = {
     0xb3: Op('0xb3')         # ZhangHai - play credits
     .field(1, Type.HEXNUM)
     .field(1, Type.UN_DEC),  # 1: TrueEnd, 3: NormalEnd
-    0xb4: Op('dlg_image')
+    0xb4: Op('fg_avatar')
     .field(1, Type.HEXNUM)
     .field(1, Type.STRLEN),
-    0xb6: Op('dlg_wnd')
+    0xb6: Op('dlg_mode')
     .field(2, Type.UN_DEC),  # 0: horizontal bottom, 1: vertical fullscreen
-    0xb8: Op('0xb8')
+    0xb8: Op('nop_chapter')
     .field(1, Type.HEXNUM)
     .field(1, Type.UN_DEC),  # ? Chapter No.
     0xba: Op('0xba')
     .field(2, Type.HEXNUM),
-    0xbb: Op('0xbb')         # ZhangHai - fade out music
+    0xbb: Op('bgm_vol_bb')   # ZhangHai - fade out music
     .field(1, Type.HEXNUM)
     .field(1, Type.UN_DEC)   # Volume %
     .field(2, Type.UN_DEC)   # Fade out (ms)
     .field(2, Type.BARRAY),
-    0xbc: Op('0xbc')         # ZhangHai - fade in music
-    .field(1, Type.HEXNUM)
+    0xbc: Op('bgm_vol_bc')   # ZhangHai - fade in music
     .field(1, Type.UN_DEC)   # Volume %
+    .field(1, Type.HEXNUM)
     .field(2, Type.UN_DEC)   # Fade in (ms)
     .field(2, Type.BARRAY),
-    0xbd: Op('0xbd')         # ZhangHai - fade out all SE
+    0xbd: Op('glb_volume_bd')         # anim global volume
     .field(1, Type.HEXNUM)
     .field(1, Type.UN_DEC)   # Volume %
     .field(2, Type.UN_DEC)   # Fade out (ms)
     .field(2, Type.BARRAY),
-    0xbe: Op('0xbe')         # ZhangHai - fade in all SE
+    0xbe: Op('glb_volume_be')         # ZhangHai - fade in all sounds
     .field(1, Type.HEXNUM)
     .field(1, Type.UN_DEC)   # Volume %
     .field(2, Type.UN_DEC)   # Fade in (ms)
